@@ -21,5 +21,12 @@
     "savepath":"./data/default",
     "verbose":0,
     "archive": true
+    "burst": {
+  	"enabled": true,
+  	"min_duty_cycle": 0.1,
+  	"max_duty_cycle": 0.5,
+  	"min_burst_duration": 0.001,
+  	"max_burst_duration": 0.01
+	}
 }
 

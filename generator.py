@@ -23,6 +23,25 @@ cfsk = ctypes.CDLL(os.path.abspath("./cmodules/fsk_modulate"))
 ctx = ctypes.CDLL(os.path.abspath("./cmodules/rrc_tx"))
 cchan = ctypes.CDLL(os.path.abspath("./cmodules/channel"))
 
+def apply_burst(I, Q, sample_rate, config):
+    if not config.get("burst", {}).get("enabled", False):
+        return I, Q
+
+    n = len(I)
+    burst_duration = np.random.uniform(config["burst"]["min_burst_duration"],
+                                       config["burst"]["max_burst_duration"])
+    burst_samples = int(burst_duration * sample_rate)
+    if burst_samples >= n:
+        return I, Q  # burst longer than sample, skip
+
+    start = np.random.randint(0, n - burst_samples)
+    mask = np.zeros(n, dtype=bool)
+    mask[start:start+burst_samples] = True
+
+    I_burst = np.where(mask, I, 0.0)
+    Q_burst = np.where(mask, Q, 0.0)
+
+    return I_burst, Q_burst
 
 def generate_linear(idx_start, mod, config):
     verbose = ctypes.c_int(config["verbose"])
@@ -73,6 +92,10 @@ def generate_linear(idx_start, mod, config):
                     "dt":dt.value,
                     "fo":fo.value,
                     "po":po.value,
+                    "burst": config["burst"]["enabled"],
+                    "burst_duration": burst_duration,
+                    "burst_start_sample": start,
+                    "burst_end_sample": start + burst_samples,
                     "savepath":config["savepath"],
                     "savename":config["savename"]}
         
@@ -81,6 +104,8 @@ def generate_linear(idx_start, mod, config):
         I = I[halfbuf:-halfbuf]
         Q = np.array([_q for _q in yQ])
         Q = Q[halfbuf:-halfbuf]
+
+        I, Q = apply_burst(I, Q, sample_rate=sps.value * 1.0, config=config)
 
         ## save record in sigmf format
         save_sigmf(I, Q, metadata, idx_start+i)
@@ -128,6 +153,10 @@ def generate_am(idx_start, mod, config):
                     "snr":snr.value,
                     "fo":fo.value,
                     "po":po.value,
+                    "burst": config["burst"]["enabled"],
+                    "burst_duration": burst_duration,
+                    "burst_start_sample": start,
+                    "burst_end_sample": start + burst_samples,
                     "savepath":config["savepath"],
                     "savename":config["savename"]}
         
@@ -136,6 +165,8 @@ def generate_am(idx_start, mod, config):
         I = I[halfbuf:-halfbuf]
         Q = np.array([_q for _q in yQ])
         Q = Q[halfbuf:-halfbuf]
+
+        I, Q = apply_burst(I, Q, sample_rate=sps.value * 1.0, config=config)
 
         ## save record in sigmf format
         save_sigmf(I, Q, metadata, idx_start+i)
@@ -189,6 +220,10 @@ def generate_fm(idx_start, mod, config):
                     "snr":snr.value,
                     "fo":fo.value,
                     "po":po.value,
+                    "burst": config["burst"]["enabled"],
+                    "burst_duration": burst_duration,
+                    "burst_start_sample": start,
+                    "burst_end_sample": start + burst_samples,
                     "savepath":config["savepath"],
                     "savename":config["savename"]}
 
@@ -197,6 +232,8 @@ def generate_fm(idx_start, mod, config):
         I = I[halfbuf:-halfbuf]
         Q = np.array([_q for _q in yQ])
         Q = Q[halfbuf:-halfbuf]
+
+        I, Q = apply_burst(I, Q, sample_rate=sps.value * 1.0, config=config)
 
         ## save record in sigmf format
         save_sigmf(I, Q, metadata, idx_start+i)
@@ -272,6 +309,10 @@ def generate_fsk(idx_start, mod, config):
                     "dt":dt.value,
                     "fo":fo.value,
                     "po":po.value,
+                    "burst": config["burst"]["enabled"],
+                    "burst_duration": burst_duration,
+                    "burst_start_sample": start,
+                    "burst_end_sample": start + burst_samples,
                     "savepath":config["savepath"],
                     "savename":config["savename"]}
 
@@ -280,6 +321,8 @@ def generate_fsk(idx_start, mod, config):
         I = I[halfbuf:-halfbuf]
         Q = np.array([_q for _q in yQ])
         Q = Q[halfbuf:-halfbuf]
+
+        I, Q = apply_burst(I, Q, sample_rate=sps.value * 1.0, config=config)
 
         ## save record in sigmf format
         save_sigmf(I, Q, metadata, idx_start+i)
@@ -316,6 +359,10 @@ def generate_noise(idx_start, mod, config):
                     "sps":sps.value,
                     "fo":fo.value,
                     "po":po.value,
+                    "burst": config["burst"]["enabled"],
+                    "burst_duration": burst_duration,
+                    "burst_start_sample": start,
+                    "burst_end_sample": start + burst_samples
                     "savepath":config["savepath"],
                     "savename":config["savename"]}
         
@@ -324,6 +371,8 @@ def generate_noise(idx_start, mod, config):
         I = I[halfbuf:-halfbuf]
         Q = np.array([_q for _q in yQ])
         Q = Q[halfbuf:-halfbuf]
+
+        I, Q = apply_burst(I, Q, sample_rate=sps.value * 1.0, config=config)
 
         ## save record in sigmf format
         save_sigmf(I, Q, metadata, idx_start+i)
